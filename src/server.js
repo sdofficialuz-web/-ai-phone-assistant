@@ -140,7 +140,7 @@ mediaServer.on("connection", (telephonySocket) => {
               "Qo‘ng‘iroq qiluvchini xushmuomala kutib oling. O‘zbek, rus yoki ingliz tilida gapirsa, " +
               "o‘sha tilda javob bering. Avval qaysi masalada qo‘ng‘iroq qilganini, ismini va qayta aloqa " +
               "raqamini so‘rang. Faqat aniq bilgan ma’lumotni ayting; narx, va’da yoki majburiyatni o‘zingiz " +
-              "to‘qimang. Zarur bo‘lsa, Davlat keyinroq aloqaga chiqishini ayting. Suhbatni qisqa va tabiiy olib boring.`,
+              "to‘qimang. Zarur bo‘lsa, Davlat keyinroq aloqaga chiqishini ayting. Suhbatni qisqa va tabiiy olib boring.",
             output_modalities: ["audio"],
             audio: {
               input: {
