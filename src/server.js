@@ -30,6 +30,26 @@ app.get("/health", (_req, res) => {
   });
 });
 
+function mulaw8kToPcm24k(base64Audio) {
+  const input = Buffer.from(base64Audio, "base64");
+  const output = Buffer.alloc(input.length * 3 * 2);
+  const decode = (byte) => {
+    const value = (~byte) & 0xff;
+    let sample = ((value & 0x0f) << 3) + 0x84;
+    sample <<= (value & 0x70) >> 4;
+    return (value & 0x80) ? 0x84 - sample : sample - 0x84;
+  };
+  for (let i = 0; i < input.length; i++) {
+    const current = decode(input[i]);
+    const following = decode(input[Math.min(i + 1, input.length - 1)]);
+    for (let j = 0; j < 3; j++) {
+      const sample = Math.round(current + ((following - current) * j) / 3);
+      output.writeInt16LE(Math.max(-32768, Math.min(32767, sample)), (i * 3 + j) * 2);
+    }
+  }
+  return output.toString("base64");
+}
+
 function validTwilioRequest(req) {
   if (!TWILIO_AUTH_TOKEN) return process.env.NODE_ENV !== "production";
   const signature = req.header("x-twilio-signature");
@@ -121,9 +141,10 @@ mediaServer.on("connection", (telephonySocket) => {
               "o‘sha tilda javob bering. Avval qaysi masalada qo‘ng‘iroq qilganini, ismini va qayta aloqa " +
               "raqamini so‘rang. Faqat aniq bilgan ma’lumotni ayting; narx, va’da yoki majburiyatni o‘zingiz " +
               "to‘qimang. Zarur bo‘lsa, Davlat keyinroq aloqaga chiqishini ayting. Suhbatni qisqa va tabiiy olib boring.`,
+            output_modalities: ["audio"],
             audio: {
               input: {
-                format: { type: "audio/pcmu" },
+                format: { type: "audio/pcm", rate: 24000 },
                 turn_detection: { type: "server_vad" }
               },
               output: {
@@ -167,7 +188,7 @@ mediaServer.on("connection", (telephonySocket) => {
     if (event.event === "media" && started && openAiSocket?.readyState === WebSocket.OPEN) {
       openAiSocket.send(JSON.stringify({
         type: "input_audio_buffer.append",
-        audio: event.media.payload
+        audio: mulaw8kToPcm24k(event.media.payload)
       }));
     }
 
